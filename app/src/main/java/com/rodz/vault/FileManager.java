@@ -44,7 +44,8 @@ public class FileManager{
     public Bitmap getBitmap(String filename){
         try{
             File f = new File(path, filename);
-            Bitmap b = BitmapFactory.decodeStream(new FileInputStream(f));
+            FileInputStream fis = new FileInputStream(f);
+            Bitmap b = BitmapFactory.decodeStream(fis);
 
             if (b.getWidth() > 600){
                 Double height = b.getHeight() * 1.0;
@@ -52,6 +53,7 @@ public class FileManager{
                 int new_height = (int) (height / width * 600);
                 b = Bitmap.createScaledBitmap(b, 600, new_height, false);
             }
+            fis.close();
             return b;
         }
         catch(Exception ee){
