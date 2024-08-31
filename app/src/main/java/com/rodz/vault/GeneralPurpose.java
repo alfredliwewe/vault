@@ -1,6 +1,7 @@
 package com.rodz.vault;
 
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -57,6 +58,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class GeneralPurpose extends AppCompatActivity {
     SQLiteDatabase db;
@@ -205,7 +207,7 @@ public class GeneralPurpose extends AppCompatActivity {
             @SuppressLint("Range")
             @Override
             public void onClick(View v) {
-                Cursor c = db.rawQuery("SELECT * FROM pictures WHERE album = ? AND id < ? LIMIT 1", new String[]{album,id});
+                Cursor c = db.rawQuery("SELECT * FROM pictures WHERE album = ? AND id < ? ORDER BY id DESC LIMIT 1", new String[]{album,id});
                 if (c.getCount() > 0){
                     c.moveToFirst();
                     printAnimation(c.getString(c.getColumnIndex("name")), c.getString(c.getColumnIndex("id")));
@@ -237,6 +239,8 @@ public class GeneralPurpose extends AppCompatActivity {
     @SuppressLint("Range")
     private void printPictures() {
         MaterialButton add = new MaterialButton(this);
+        add.setTextColor(Color.WHITE);
+        add.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         add.setText("Add pictures");
         add.setOnClickListener(v -> {
             Intent intent = new Intent(GeneralPurpose.this, GeneralPurpose.class);
@@ -257,10 +261,21 @@ public class GeneralPurpose extends AppCompatActivity {
 
             ArrayList<Bitmap> pictures = new ArrayList<>();
             ArrayList<String> filenames = new ArrayList<>(), ids = new ArrayList<>();
-            Cursor cursor = db.rawQuery("SELECT * FROM pictures ", null);
+            Cursor cursor = db.rawQuery("SELECT * FROM pictures WHERE album = ?", new String[]{album});
             while(cursor.moveToNext()) {
-
-                Bitmap bitmap = Utilities.cropSquareBitmap(fileManager.getBitmap(cursor.getString(cursor.getColumnIndex("name"))));
+                String thumbnail = cursor.getString(cursor.getColumnIndex("thumbnail")), id = cursor.getString(cursor.getColumnIndex("id"));
+                Bitmap bitmap = null;
+                if (thumbnail != null){
+                    bitmap = fileManager.getBitmap(thumbnail);
+                }
+                else {
+                    bitmap = Utilities.cropSquareBitmap(fileManager.getBitmap(cursor.getString(cursor.getColumnIndex("name"))));
+                    String filename = UUID.randomUUID().toString()+".png";
+                    fileManager.saveImage(filename, bitmap);
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put("thumbnail", filename);
+                    db.update("pictures", contentValues, "id = ?", new String[]{id});
+                }
                 pictures.add(bitmap);
                 filenames.add(cursor.getString(cursor.getColumnIndex("name")));
                 ids.add(cursor.getString(cursor.getColumnIndex("id")));

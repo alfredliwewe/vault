@@ -16,7 +16,7 @@ public class DbHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS albums (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, picture VARCHAR, views VARCHAR)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS pictures (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, origin VARCHAR, destination VARCHAR, views VARCHAR, album INTEGER)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS pictures (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, origin VARCHAR, destination VARCHAR, views VARCHAR, album INTEGER, thumbnail TEXT)");
     }
 
     @Override
