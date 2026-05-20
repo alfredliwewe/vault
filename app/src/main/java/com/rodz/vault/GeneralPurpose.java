@@ -1,10 +1,14 @@
 package com.rodz.vault;
 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
+import android.app.RecoverableSecurityException;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -14,9 +18,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Movie;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -123,7 +129,11 @@ public class GeneralPurpose extends AppCompatActivity {
             String filename = intent.getStringExtra("file");
             String id = intent.getStringExtra("id");
 
-            printAnimation(filename,id);
+            Intent intent1 = new Intent(this, ImageSwipe.class);
+            intent1.putExtra("starting_id", id);
+            intent1.putExtra("album", album);
+            startActivity(intent1);
+            finish(); // Finish this activity as we're moving to the full screen swipe view
         }
     }
 
@@ -269,7 +279,12 @@ public class GeneralPurpose extends AppCompatActivity {
                     bitmap = fileManager.getBitmap(thumbnail);
                 }
                 else {
-                    bitmap = Utilities.cropSquareBitmap(fileManager.getBitmap(cursor.getString(cursor.getColumnIndex("name"))));
+                    Bitmap sourceBitmap = fileManager.getBitmap(cursor.getString(cursor.getColumnIndex("name")));
+                    if(sourceBitmap == null){
+                        continue;
+                    }
+
+                    bitmap = Utilities.cropSquareBitmap(sourceBitmap);
                     String filename = UUID.randomUUID().toString()+".png";
                     fileManager.saveImage(filename, bitmap);
                     ContentValues contentValues = new ContentValues();
@@ -314,280 +329,62 @@ public class GeneralPurpose extends AppCompatActivity {
             }
 
 
-            /*Cursor cursor = db.rawQuery("SELECT * FROM pictures ", null);
-            while(cursor.moveToNext()){
-                String filename = cursor.getString(cursor.getColumnIndex("name")), id = cursor.getString(cursor.getColumnIndex("id"));
-                View folder_view = getLayoutInflater().inflate(R.layout.folder_view, null);
-                TextView folder_name = folder_view.findViewById(R.id.folder_name), date_created = folder_view.findViewById(R.id.date_created);
-                folder_name.setText(cursor.getString(cursor.getColumnIndex("name")));
-
-
-                //date_created.setText(sdf.format(creationDate));
-
-                ImageView icon = folder_view.findViewById(R.id.icon);
-                //icon.setImageResource(R.drawable.ic_cached);
-                Bitmap bitmap = fileManager.getBitmap(cursor.getString(cursor.getColumnIndex("name")));
-
-            Cursor cursor = db.rawQuery("SELECT * FROM pictures ", null);
-            while(cursor.moveToNext()){
-                String filename = cursor.getString(cursor.getColumnIndex("name")), id = cursor.getString(cursor.getColumnIndex("id"));
-                View folder_view = getLayoutInflater().inflate(R.layout.folder_view, null);
-                TextView folder_name = folder_view.findViewById(R.id.folder_name), date_created = folder_view.findViewById(R.id.date_created);
-                folder_name.setText(cursor.getString(cursor.getColumnIndex("name")));
-
-
-                //date_created.setText(sdf.format(creationDate));
-
-                ImageView icon = folder_view.findViewById(R.id.icon);
-                //icon.setImageResource(R.drawable.ic_cached);
-                Bitmap bitmap = fileManager.getBitmap(cursor.getString(cursor.getColumnIndex("name")));
-                icon.setImageBitmap(bitmap);
-                //System.out.println(fileEntry.getAbsolutePath());
-                vert.addView(folder_view);
-                folder_view.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent(GeneralPurpose.this, GeneralPurpose.class);
-                        intent.putExtra("task","preview");
-                        intent.putExtra("album",album);
-                        intent.putExtra("file",filename);
-                        intent.putExtra("id",id);
-                        startActivity(intent);
-                    }
-                });
-            }
-            cursor.close();
-
-             */
-
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    main.removeView(progressBar);
-                    main.addView(vert);
-                }
+            runOnUiThread(() -> {
+                main.removeView(progressBar);
+                main.addView(vert);
             });
         });
         thread.start();
 
-                /*LinearLayout vert = new LinearLayout(ctx);
-                vert.setOrientation(LinearLayout.VERTICAL);
-                main.addView(vert);
-
-                /*Cursor cursor = db.rawQuery("SELECT * FROM pictures ", null);
-                while(cursor.moveToNext()){
-                    String filename = cursor.getString(cursor.getColumnIndex("name"));
-                    View folder_view = getLayoutInflater().inflate(R.layout.folder_view, null);
-                    TextView folder_name = folder_view.findViewById(R.id.folder_name), date_created = folder_view.findViewById(R.id.date_created);
-                    folder_name.setText(cursor.getString(cursor.getColumnIndex("name")));
-
-
-                    //date_created.setText(sdf.format(creationDate));
-
-                    ImageView icon = folder_view.findViewById(R.id.icon);
-                    //icon.setImageResource(R.drawable.ic_cached);
-                    Bitmap bitmap = fileManager.getBitmap(cursor.getString(cursor.getColumnIndex("name")));
-                    icon.setImageBitmap(bitmap);
-                    //System.out.println(fileEntry.getAbsolutePath());
-                    vert.addView(folder_view);
-                    folder_view.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            Intent intent = new Intent(GeneralPurpose.this, GeneralPurpose.class);
-                            intent.putExtra("task","preview");
-                            intent.putExtra("album",album);
-                            intent.putExtra("file",filename);
-                            startActivity(intent);
-                        }
-                    });
-                }
-                cursor.close();
-
-
-                RecyclerView recyclerView = new RecyclerView(ctx);
-                recyclerView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                recyclerView.setLayoutManager(new GridLayoutManager(ctx, 4));
-
-                List<Bitmap> imageList = new ArrayList<>();
-                // Assuming you have 100 drawable resources
-                /*Cursor cursor = db.rawQuery("SELECT * FROM pictures ", null);
-                while(cursor.moveToNext()){
-                    String filename = cursor.getString(cursor.getColumnIndex("name"));
-                    Bitmap bitmap = fileManager.getBitmap(filename);
-                    imageList.add(bitmap); // replace with your actual image resources
-                }
-                cursor.close();
-
-                ImageAdapter adapter = new ImageAdapter(imageList);
-                recyclerView.setAdapter(adapter);
-
-
-                //main.removeView(progressBar);
-                vert.addView(recyclerView);
-
-                 */
     }
 
-    public void showFolder(File folder){
-        if (checkPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            LinearLayout vert = new LinearLayout(this);
-            vert.setOrientation(LinearLayout.VERTICAL);
+    private int getScreenWidth() {
+        return Resources.getSystem().getDisplayMetrics().widthPixels;
+    }
 
-            Thread thread1 = new Thread(new Runnable() {
-                @SuppressLint("ResourceType")
-                @Override
-                public void run() {
-                    //get list of music and store to database
+    private void showFolder(File folder) {
+        main.removeAllViews();
+        TextView path = new TextView(this);
+        path.setText(folder.getAbsolutePath());
+        path.setTextSize(20);
+        main.addView(path);
 
-                    if (folder != null) {
-                        //if (folder.exists()) {
-                        File[] children = folder.listFiles();
-                        ArrayList<File> images = new ArrayList<>();
-
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-                        for (File fileEntry : children) {
-                            long creationTime = fileEntry.lastModified();
-                            Date creationDate = new Date(creationTime);
-
-                            if (fileEntry.isDirectory()) {
-                                try {
-                                    //listFilesForFolder(fileEntry);
-                                    // print folder
-                                    View folder_view = getLayoutInflater().inflate(R.layout.folder_view, null);
-                                    TextView folder_name = folder_view.findViewById(R.id.folder_name), date_created = folder_view.findViewById(R.id.date_created);
-                                    folder_name.setText(fileEntry.getName());
-                                    date_created.setText(sdf.format(creationDate));
-                                    folder_view.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            dir_progress.add(fileEntry);
-                                            showFolder(fileEntry);
-                                        }
-                                    });
-                                    vert.addView(folder_view);
-                                } catch (Exception exception) {
-                                    exception.printStackTrace();
-                                }
-                            } else {
-                                images.add(fileEntry);
-                            }
-                        }
-                        //}
-
-                        for (File fileEntry:images){
-                            long creationTime = fileEntry.lastModified();
-                            Date creationDate = new Date(creationTime);
-
-                            String filename = fileEntry.getName();
-                            String path = fileEntry.getAbsolutePath();
-                            String[] chars = filename.toLowerCase().split("\\.");
-                            if (chars.length > 1) {
-                                String extension = chars[chars.length - 1];
-                                List<String> image_extensions = Arrays.asList(new String[]{"png","webp","jpg","gif"});
-                                if (image_extensions.contains(extension)) {
-                                    //files.add(fileEntry.getAbsolutePath());
-                                    View folder_view = getLayoutInflater().inflate(R.layout.folder_view, null);
-                                    TextView folder_name = folder_view.findViewById(R.id.folder_name), date_created = folder_view.findViewById(R.id.date_created);
-                                    folder_name.setText(filename);
-
-
-                                    date_created.setText(sdf.format(creationDate));
-
-                                    ImageView icon = folder_view.findViewById(R.id.icon);
-                                    //icon.setImageResource(R.drawable.ic_cached);
-                                    Bitmap bitmap = BitmapFactory.decodeFile(fileEntry.getAbsolutePath());
-                                    icon.setImageBitmap(bitmap);
-                                    //System.out.println(fileEntry.getAbsolutePath());
-                                    vert.addView(folder_view);
-                                    folder_view.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            fileManager.saveFiles(fileEntry.getName(), fileEntry);
-                                            db.execSQL("INSERT INTO pictures (`id`, `name`, `origin`, `destination`, `views`, `album`) VALUES (NULL, ?,?,?,?,?)", new Object[]{
-                                                    fileEntry.getName(),
-                                                    fileEntry.getAbsolutePath(),
-                                                    fileEntry.getName(),
-                                                    "0",
-                                                    album
-                                            });
-                                            fileEntry.delete();
-                                            showFolder(folder);
-                                            Toast.makeText(ctx, "Saved file", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                }
-                            } else {
-                                //System.out.println(fileEntry.getName());
-                            }
-                        }
+        File[] children = folder.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                Button button = new Button(this);
+                button.setText(child.getName());
+                button.setAllCaps(false);
+                button.setOnClickListener(v -> {
+                    if (child.isDirectory()) {
+                        dir_progress.add(child);
+                        showFolder(child);
+                    } else {
+                        //Toast.makeText(ctx, "File: " + child.getName(), Toast.LENGTH_SHORT).show();
+                        //add file to database
+                        //fileManager.saveImage(child);
+                        //db.execSQL("INSERT INTO pictures (name, album) VALUES ('" + child.getName() + "', '" + album + "')");
+                        ContentValues contentValues = new ContentValues();
+                        contentValues.put("name", child.getName());
+                        contentValues.put("album", album);
+                        db.insert("pictures", null, contentValues);
+                        Toast.makeText(ctx, "Saved", Toast.LENGTH_SHORT).show();
                     }
-                    else{
-                        TextView empty = new TextView(ctx);
-                        empty.setText("Could not open this folder");
-                        empty.setTextColor(Color.parseColor(getString(R.color.red)));
-                        empty.setBackgroundResource(R.drawable.alert_danger);
-                        vert.addView(empty);
-                    }
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            main.removeAllViews();
-                            main.addView(vert);
-                        }
-                    });
-                }
-            });
-
-            thread1.start();
-        }
-        else{
-            if (!hasRequested) {
-                hasRequested = true;
-                ActivityCompat.requestPermissions(GeneralPurpose.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                });
+                main.addView(button);
             }
         }
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            switch (keyCode) {
-                case KeyEvent.KEYCODE_BACK:
-                    if (dir_progress.size() > 1) {
-                        dir_progress.remove(dir_progress.size() - 1);
-                        showFolder(dir_progress.get(dir_progress.size() - 1));
-                    } else {
-                        finish();
-                    }
-                    return true;
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (dir_progress.size() > 1) {
+                dir_progress.remove(dir_progress.size() - 1);
+                showFolder(dir_progress.get(dir_progress.size() - 1));
+                return true;
             }
-
         }
         return super.onKeyDown(keyCode, event);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        //indexFiles();
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    //permission result
-
-    private boolean checkPermission(String permission)
-    {
-        //String permission = android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-        int res = getApplicationContext().checkCallingOrSelfPermission(permission);
-        return (res == PackageManager.PERMISSION_GRANTED);
-    }
-
-    public static int getScreenWidth() {
-        return Resources.getSystem().getDisplayMetrics().widthPixels;
-    }
-
-    public static int getScreenHeight() {
-        return Resources.getSystem().getDisplayMetrics().heightPixels;
     }
 }
