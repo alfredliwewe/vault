@@ -1,14 +1,33 @@
 package com.rodz.vault;
 
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Utilities {
-    public static Bitmap cropSquareBitmap(Bitmap sourceBitmap) {
+    public static Bitmap cropSquareBitmap(Bitmap sourceBitmap, Context context){
         // Determine the dimensions of the original bitmap
+        if(sourceBitmap == null){
+            //return bitmap of app icon
+            try {
+                Drawable iconDrawable = context.getPackageManager().getApplicationIcon(context.getPackageName());
+
+                // 2. Convert Drawable to Bitmap
+                if (iconDrawable instanceof BitmapDrawable) {
+                    return ((BitmapDrawable) iconDrawable).getBitmap();
+                }
+            }
+            catch (PackageManager.NameNotFoundException e){
+                e.printStackTrace();
+                return null;
+            }
+        }
         int originalWidth = sourceBitmap.getWidth();
         int originalHeight = sourceBitmap.getHeight();
 

@@ -284,7 +284,7 @@ public class GeneralPurpose extends AppCompatActivity {
                         continue;
                     }
 
-                    bitmap = Utilities.cropSquareBitmap(sourceBitmap);
+                    bitmap = Utilities.cropSquareBitmap(sourceBitmap, ctx);
                     String filename = UUID.randomUUID().toString()+".png";
                     fileManager.saveImage(filename, bitmap);
                     ContentValues contentValues = new ContentValues();
